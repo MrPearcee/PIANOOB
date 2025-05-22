@@ -2,112 +2,117 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>PIANOOB – Diagnostic Viewer</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>PIANOOB – Note-Name Viewer</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f5f5f5; margin:0; padding:0; }
-    header { background: #3f51b5; color: #fff; padding: 20px; text-align: center; }
-    main { max-width: 800px; margin: 30px auto; padding: 0 20px; }
-    .song { background: #fff; padding: 20px; margin-bottom: 30px; border-radius: 6px; }
-    .notation { min-height: 100px; padding: 10px; border: 1px solid #ddd; }
-    .error { color: red; }
-    pre { background: #eee; padding: 10px; overflow-x: auto; }
+    body { font-family: Arial, sans-serif; background: #fafafa; margin:0; padding:20px }
+    h1 { text-align:center; color:#2c3e50; }
+    .song { margin-bottom:2em; }
+    .song-title { font-size:1.4em; margin-bottom:0.5em; color:#34495e; }
+    .movement { border:1px solid #ccc; border-radius:4px; margin-bottom:1em; overflow:hidden }
+    .movement-header { background:#34495e; color:#fff; padding:0.75em 1em; cursor:pointer }
+    .movement-header:hover { background:#2c3a47 }
+    .bars-container { display:none; padding:1em; background:#fff }
+    .bar { display:flex; flex-direction:column; margin-bottom:1em; border-bottom:1px solid #eee; padding-bottom:0.5em }
+    .hand-label { font-size:0.85em; color:#7f8c8d; margin-bottom:0.3em }
+    .notes-row { display:flex; gap:0.5em; flex-wrap:wrap }
+    .note { background:#ecf0f1; padding:0.3em 0.6em; border-radius:3px; font-family:monospace }
+    #songs.loading { text-align:center; color:#777; }
   </style>
-  <!-- Load ABCJS from the CDN for diagnostics -->
-  <script src="abcjs-basic-min.js"></script>
 </head>
 <body>
-  <header>
-    <h1>PIANOOB – Diagnostic ABCJS Viewer</h1>
-  </header>
-  <main>
-    <div class="song">
-      <h2>Elton John – Let It Be (Simplified)</h2>
-      <div id="elton-let-it-be" class="notation">Loading notation…</div>
-    </div>
-    <div class="song">
-      <h2>Beethoven – Moonlight Sonata (Simplified)</h2>
-      <div id="moonlight-sonata" class="notation">Loading notation…</div>
-    </div>
-    <div class="song">
-      <h2>▶️ Console Output</h2>
-      <pre id="console-log">Waiting for logs…</pre>
-    </div>
-  </main>
+  <h1>PIANOOB – Piano Note-Name Viewer</h1>
+  <div id="songs" class="loading">Loading…</div>
 
   <script>
-    // Utility to mirror console into the page
-    (function() {
-      const origLog = console.log;
-      const origErr = console.error;
-      const logEl = document.getElementById("console-log");
-      console.log = function(...args) {
-        origLog.apply(console, args);
-        logEl.textContent += args.map(a=>String(a)).join(" ") + "\n";
-      };
-      console.error = function(...args) {
-        origErr.apply(console, args);
-        logEl.textContent += "ERROR: " + args.map(a=>String(a)).join(" ") + "\n";
-      };
-    })();
-
-    document.addEventListener("DOMContentLoaded", function() {
-      console.log("DOM loaded");
-      console.log("ABCJS defined?", typeof ABCJS !== "undefined");
-
-      if (typeof ABCJS === "undefined") {
-        document.querySelectorAll(".notation").forEach(el => {
-          el.innerHTML = '<p class="error">ABCJS failed to load from CDN.</p>';
-        });
-        return;
+    async function loadSongs() {
+      const container = document.getElementById('songs');
+      try {
+        const res = await fetch('songs.json');
+        if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+        const data = await res.json();
+        container.classList.remove('loading');
+        renderSongs(data);
+      } catch (err) {
+        container.textContent = '⚠️ Could not load songs.json: ' + err.message;
       }
+    }
 
-      const pieces = [
-        {
-          id: "elton-let-it-be",
-          abc: `
-X:1
-T:Let It Be
-M:4/4
-L:1/4
-V:RH clef=treble
-V:LH clef=bass
-%%score { RH LH }
-K:C
+    function renderSongs(data) {
+      const container = document.getElementById('songs');
+      container.innerHTML = '';
 
-[V:RH] C2 E2 | D2 F2 | E2 C'2 | D'2 E'2 |
-[V:LH] C,,2 E,,2 | G,,2 B,,2 | A,,2 A,,2 | F,,2 A,,2 |
-`
-        },
-        {
-          id: "moonlight-sonata",
-          abc: `
-X:2
-T:Moonlight Sonata
-M:4/4
-L:1/8
-V:RH clef=treble
-V:LH clef=bass
-%%score { RH LH }
-K:C#m
+      for (const key of Object.keys(data)) {
+        const song = data[key];
 
-[V:RH] z8 e'8 | d'#8 d'#8 | e'8 e'8 | d'#8 d'#8 |
-[V:LH] c,8 c,8 | b,,8 e,8 | a,,8 a,,8 | b,,8 e,8 |
-`
-        }
-      ];
+        // Song wrapper
+        const songEl = document.createElement('div');
+        songEl.className = 'song';
 
-      pieces.forEach(({id, abc}) => {
-        console.log(`Rendering ${id}…`);
-        try {
-          ABCJS.renderAbc(id, abc, { responsive: "resize" });
-          console.log(`${id} rendered successfully.`);
-        } catch (err) {
-          console.error(`${id} render error:`, err);
-          document.getElementById(id).innerHTML = `<p class="error">Render error: ${err.message}</p>`;
-        }
-      });
-    });
+        // Song title
+        const titleEl = document.createElement('div');
+        titleEl.className = 'song-title';
+        titleEl.textContent = song.title;
+        songEl.appendChild(titleEl);
+
+        // Movements
+        song.movements.forEach(mov => {
+          const mv = document.createElement('div');
+          mv.className = 'movement';
+
+          const hdr = document.createElement('div');
+          hdr.className = 'movement-header';
+          hdr.textContent = mov.title;
+          mv.appendChild(hdr);
+
+          const bc = document.createElement('div');
+          bc.className = 'bars-container';
+
+          mov.bars.forEach(bar => {
+            const barEl = document.createElement('div');
+            barEl.className = 'bar';
+
+            // Right hand
+            barEl.innerHTML += `<div class="hand-label">RH:</div>`;
+            const rhRow = document.createElement('div');
+            rhRow.className = 'notes-row';
+            bar.rh.forEach(n => {
+              const nEl = document.createElement('div');
+              nEl.className = 'note';
+              nEl.textContent = n;
+              rhRow.appendChild(nEl);
+            });
+            barEl.appendChild(rhRow);
+
+            // Left hand
+            barEl.innerHTML += `<div class="hand-label">LH:</div>`;
+            const lhRow = document.createElement('div');
+            lhRow.className = 'notes-row';
+            bar.lh.forEach(n => {
+              const nEl = document.createElement('div');
+              nEl.className = 'note';
+              nEl.textContent = n;
+              lhRow.appendChild(nEl);
+            });
+            barEl.appendChild(lhRow);
+
+            bc.appendChild(barEl);
+          });
+
+          mv.appendChild(bc);
+          songEl.appendChild(mv);
+
+          hdr.addEventListener('click', () => {
+            bc.style.display = bc.style.display === 'block' ? 'none' : 'block';
+          });
+        });
+
+        container.appendChild(songEl);
+      }
+    }
+
+    // Start loading
+    loadSongs();
   </script>
 </body>
 </html>
