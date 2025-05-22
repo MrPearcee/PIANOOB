@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Piano Note-Name Viewer</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #fafafa; color: #333; margin:0; padding:20px }
+    h1 { text-align:center; color:#2c3e50; }
+    .song { margin-bottom: 2em; }
+    .song-title { font-size:1.4em; margin-bottom:0.5em; color:#34495e; }
+    .movement { border:1px solid #ccc; border-radius:4px; margin-bottom:1em; overflow:hidden }
+    .movement-header { background:#34495e; color:white; padding:0.75em 1em; cursor:pointer }
+    .movement-header:hover { background:#2c3a47 }
+    .bars-container { display:none; padding:1em; background:white }
+    .bar { display:flex; flex-direction:column; margin-bottom:1em; border-bottom:1px solid #eee; padding-bottom:0.5em }
+    .hand-label { font-size:0.85em; color:#7f8c8d; margin-bottom:0.3em }
+    .notes-row { display:flex; gap:0.5em; flex-wrap:wrap }
+    .note { background:#ecf0f1; padding:0.3em 0.5em; border-radius:3px; font-family:monospace }
+  </style>
+</head>
+<body>
+  <h1>Piano Note-Name Viewer</h1>
+  <div id="songs"></div>
+
+  <script>
+    async function loadSongs() {
+      const res = await fetch('songs.json');
+      if (!res.ok) {
+        document.getElementById('songs').innerText = 'Failed to load songs.json';
+        return;
+      }
+      const data = await res.json();
+      renderSongs(data);
+    }
+
+    function renderSongs(data) {
+      const container = document.getElementById('songs');
+
+      Object.values(data).forEach(song => {
+        // Song wrapper
+        const songEl = document.createElement('div');
+        songEl.className = 'song';
+
+        // Song title
+        const titleEl = document.createElement('div');
+        titleEl.className = 'song-title';
+        titleEl.textContent = song.title;
+        songEl.appendChild(titleEl);
+
+        // Each movement
+        song.movements.forEach(mov => {
+          const mv = document.createElement('div');
+          mv.className = 'movement';
+
+          const hdr = document.createElement('div');
+          hdr.className = 'movement-header';
+          hdr.textContent = mov.title;
+          mv.appendChild(hdr);
+
+          const bc = document.createElement('div');
+          bc.className = 'bars-container';
+
+          mov.bars.forEach(bar => {
+            const barEl = document.createElement('div');
+            barEl.className = 'bar';
+
+            // Right hand
+            barEl.innerHTML += `<div class="hand-label">RH:</div>`;
+            const rhRow = document.createElement('div');
+            rhRow.className = 'notes-row';
+            bar.rh.forEach(n => {
+              const nEl = document.createElement('div');
+              nEl.className = 'note';
+              nEl.textContent = n;
+              rhRow.appendChild(nEl);
+            });
+            barEl.appendChild(rhRow);
+
+            // Left hand
+            barEl.innerHTML += `<div class="hand-label">LH:</div>`;
+            const lhRow = document.createElement('div');
+            lhRow.className = 'notes-row';
+            bar.lh.forEach(n => {
+              const nEl = document.createElement('div');
+              nEl.className = 'note';
+              nEl.textContent = n;
+              lhRow.appendChild(nEl);
+            });
+            barEl.appendChild(lhRow);
+
+            bc.appendChild(barEl);
+          });
+
+          mv.appendChild(bc);
+          songEl.appendChild(mv);
+
+          // Toggle on click
+          hdr.addEventListener('click', () => {
+            bc.style.display = bc.style.display === 'block' ? 'none' : 'block';
+          });
+        });
+
+        container.appendChild(songEl);
+      });
+    }
+
+    // Start
+    loadSongs();
+  </script>
+</body>
+</html>
