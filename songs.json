@@ -1,0 +1,43 @@
+{
+  "moonlight_sonata": {
+    "title": "Beethoven – Moonlight Sonata",
+    "movements": [
+      {
+        "title": "1st Movement – Adagio sostenuto",
+        "bars": [
+          { "rh": ["G#5", "E5", "C#5"],           "lh": ["C#3"] },
+          { "rh": ["G#5", "E5", "C#5"],           "lh": ["C#3"] }
+          /* … your remaining ~65 bars here … */
+        ]
+      },
+      {
+        "title": "2nd Movement – Allegretto",
+        "bars": [
+          /* fill these bars… */
+        ]
+      },
+      {
+        "title": "3rd Movement – Prestissimo agitato",
+        "bars": [
+          /* fill these bars… */
+        ]
+      }
+    ]
+  }
+
+  /* you can add more songs here, e.g.:
+
+  ,"let_it_be": {
+     "title": "Elton John – Let It Be",
+     "movements": [
+       {
+         "title": "Full Song",
+         "bars": [
+           { "rh": ["C4","E4","G4"], "lh": ["C3"] }, …
+         ]
+       }
+     ]
+   }
+
+  */
+}
